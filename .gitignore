@@ -1,0 +1,28 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Expo
+.expo/
+dist/
+*.jks
+*.p12
+*.keystore
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android
+android/build/
+android/app/build/
+android/app/.cxx/
+android/.gradle/
+# iOS
+ios/build/
+ios/Pods/
+
+# Misc
+.DS_Store
+*.pem
