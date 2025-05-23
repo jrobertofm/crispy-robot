@@ -14,5 +14,11 @@ const emptyShimPath = path.resolve(__dirname, 'shim-empty.js');
 config.resolver.extraNodeModules['stream'] = emptyShimPath;
 config.resolver.extraNodeModules['events'] = emptyShimPath;
 config.resolver.extraNodeModules['https'] = emptyShimPath; // Added 'https'
+config.resolver.extraNodeModules['http'] = emptyShimPath;
+config.resolver.extraNodeModules['net'] = emptyShimPath;
+config.resolver.extraNodeModules['crypto'] = emptyShimPath;
+config.resolver.extraNodeModules['tls'] = emptyShimPath;
+config.resolver.extraNodeModules['url'] = emptyShimPath;
+config.resolver.extraNodeModules['zlib'] = emptyShimPath
 
 module.exports = config;
