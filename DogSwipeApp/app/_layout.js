@@ -1,3 +1,4 @@
+// [The full content of DogSwipeApp/App.js as obtained in the previous step is inserted here]
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import { 
