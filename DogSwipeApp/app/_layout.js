@@ -37,6 +37,7 @@ function AppContent() {
   const [currentBreedName, setCurrentBreedName] = useState('Loading breed...');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [swipeFeedback, setSwipeFeedback] = useState({ type: null, key: 0 });
 
   const translateX = useSharedValue(0);
   const rotation = useSharedValue(0);
@@ -101,13 +102,17 @@ function AppContent() {
     console.log(`Swiped: ${action}, Dog: ${swipedBreedName}, Image: ${swipedImageUrl}`);
     if (action === 'accepted' || action === 'rejected') {
         recordSwipe(action, swipedImageUrl, swipedBreedName);
+        setSwipeFeedback({ type: action, key: Date.now() });
+        setTimeout(() => {
+          setSwipeFeedback({ type: null, key: 0 });
+        }, 1200); // 1.2 seconds
     }
     
     translateX.value = 0;
     rotation.value = 0;
     
     fetchDogImage();
-  }, [fetchDogImage, translateX, rotation]);
+  }, [fetchDogImage, translateX, rotation, setSwipeFeedback]); // Added setSwipeFeedback
 
 
   const gestureHandler = useAnimatedGestureHandler({
@@ -164,31 +169,37 @@ function AppContent() {
   }, [fetchDogImage]);
 
   // Dynamic styles using the theme
+  // Determine dynamic background color
+  let dynamicBackgroundColor = theme.colors.background; // Default
+  if (swipeFeedback.type === 'accepted') {
+    dynamicBackgroundColor = '#A5D6A7'; // A pleasant light green
+  } else if (swipeFeedback.type === 'rejected') {
+    dynamicBackgroundColor = '#EF9A9A'; // A pleasant light red
+  }
+
   const dynamicStyles = {
-    container: {
-      backgroundColor: theme.colors.background, // Use theme background
-    },
+    // container backgroundColor is now handled by dynamicBackgroundColor directly on the View
     title: {
-      color: theme.colors.primary, // Use theme primary color for title
-      marginBottom: 30, // Increased margin
+      color: theme.colors.primary, 
+      marginBottom: 30, 
     },
     errorText: {
-      color: theme.colors.error, // Use theme error color
+      color: theme.colors.error, 
     },
     messageText: {
-      color: theme.colors.onSurfaceVariant, // A less prominent color for info messages
+      color: theme.colors.onSurfaceVariant, 
     },
     cardInnerPlaceholder: {
-      backgroundColor: theme.colors.surfaceVariant, // Themed placeholder background
-      borderRadius: theme.roundness * 2, // Consistent rounding
+      backgroundColor: theme.colors.surfaceVariant, 
+      borderRadius: theme.roundness * 2, 
     },
     inlineLoader: {
-      color: theme.colors.primary, // Themed color for inline loader
+      color: theme.colors.primary, 
     }
   };
 
   return (
-    <View style={[styles.container, dynamicStyles.container]}>
+    <View style={[styles.container, { backgroundColor: dynamicBackgroundColor }]} key={swipeFeedback.key}>
       <Title style={[styles.title, dynamicStyles.title]}>Would you adopt me?</Title>
 
       <View style={styles.cardContainer}>
@@ -217,11 +228,17 @@ function AppContent() {
             ]}>
               {currentImageUrl ? (
                 <Card style={styles.cardInner}> 
-                  <Card.Cover source={{ uri: currentImageUrl }} />
-                  <Card.Content style={styles.cardContent}>
-                    <Paragraph style={styles.breedName}>{currentBreedName}</Paragraph>
-                  </Card.Content>
-                  {isLoading && currentImageUrl && (
+                  <Card.Cover 
+                    source={{ uri: currentImageUrl }} 
+                    resizeMode="cover" 
+                    style={styles.cardCover} 
+                  />
+                  {currentBreedName && !isLoading && ( // Only show if breed name is available and not loading main image
+                    <View style={styles.breedNameOverlayContainer}>
+                      <Paragraph style={styles.breedNameTextOverlay}>{currentBreedName}</Paragraph>
+                    </View>
+                  )}
+                  {isLoading && currentImageUrl && ( // This loader is for when a new image is loading while current is visible
                      <ActivityIndicator 
                         animating={true} 
                         size="small" 
@@ -276,21 +293,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around', // Adjusted for better spacing
     alignItems: 'center',
     padding: 20,
-    // backgroundColor will be set by theme in dynamicStyles
+    // No longer setting backgroundColor here, it's set dynamically on the View
   },
   title: {
-    // fontSize and fontWeight will be largely handled by Paper Title defaults
-    // color will be set by theme in dynamicStyles
     textAlign: 'center',
-    // marginBottom is now in dynamicStyles
   },
   cardContainer: { 
-    width: '95%', // Slightly wider
-    maxWidth: 380, // Slightly larger max
-    height: 480, // Adjusted height
+    width: '95%', 
+    maxWidth: 380, 
+    height: 480, 
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 25, // Increased margin
+    marginBottom: 25, 
   },
   card: { 
     width: '100%', 
@@ -303,56 +317,64 @@ const styles = StyleSheet.create({
   cardInner: { 
     width: '100%',
     height: '100%',
-    elevation: 5, // Slightly increased elevation
-    borderRadius: 12, // Added borderRadius
-    backgroundColor: MD2Colors.white, // Explicit white background for the card itself
+    elevation: 5, 
+    borderRadius: 12, 
+    backgroundColor: MD2Colors.white, 
+    overflow: 'hidden', 
   },
-  cardContent: { // Added for padding inside card content area
-    alignItems: 'center', // Center breed name
-    paddingTop: 12,
-    paddingBottom: 12,
+  cardCover: { 
+    height: '100%', 
   },
   cardInnerPlaceholder: { 
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor and borderRadius will be set by theme in dynamicStyles
   },
-  breedName: { // Will be used with Paper.Paragraph
-    fontSize: 18,
-    textAlign: 'center',
-    // marginTop: 10, // Handled by cardContent padding
+  breedNameOverlayContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    paddingVertical: 10, 
+    paddingHorizontal: 12,
+    borderBottomLeftRadius: 12, 
+    borderBottomRightRadius: 12, 
+  },
+  breedNameTextOverlay: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
   },
   button: {
-    marginTop: 25, // Increased margin
-    minWidth: '50%', // Ensure button has a decent width
-    paddingVertical: 4, // Add some vertical padding to button
+    marginTop: 25, 
+    minWidth: '50%', 
+    paddingVertical: 4, 
   },
   centeredMessage: { 
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
     height: '100%', 
-    padding: 20, // Add padding to centered messages
+    padding: 20, 
   },
-  messageText: { // For "Loading doggo..."
+  messageText: { 
     fontSize: 16,
     textAlign: 'center',
-    // color will be set by theme in dynamicStyles
   },
-  errorText: { // For error messages
+  errorText: { 
     fontSize: 16,
     textAlign: 'center',
-    // color will be set by theme in dynamicStyles
   },
-  inlineLoader: {
+  inlineLoader: { 
     position: 'absolute',
     top: '50%',
     left: '50%',
     marginLeft: -12, 
     marginTop: -12,
-    // color will be set by theme in dynamicStyles
+    zIndex: 1, 
   }
 });
 
